@@ -23,7 +23,7 @@ class KMeans:
             Maximum number of iterations of the k-means algorithm for a
             single run.
 
-        init : {'random', 'first'}, default='random'
+        init : {'random', 'first', 'k-means++'}, default='k-means++'
             Method for initialization:
 
             'random': choose `n_clusters` observations (rows) at random from data
@@ -43,7 +43,7 @@ class KMeans:
             Verbosity mode.
 
     """
-    def __init__(self, n_clusters=8, *, init='random', n_init=10, max_iter=500, tol=1e-4, verbose=False):
+    def __init__(self, n_clusters=8, *, init='k-means++', n_init=10, max_iter=500, tol=1e-4, verbose=False):
         self.numberOfClusters = n_clusters
         self.maxIterations = int(max_iter)
         self.maxStopDistance = tol
@@ -64,43 +64,25 @@ class KMeans:
         self.inertias_ = []
 
     def fit(self, trainData):
-        # initialize best metric
-        bestMetric = None
-        # initialize best centers
-        bestCenters = None
-        bestLabels = None
-        for _ in range(self.nInit):
-            self.reset()
-            # run fitIteration
-            clusterLabels = self.fitIteration(trainData)
-            # compare best metric
-            if bestMetric is None:
-                bestMetric = copy.copy(self.inertias_)
-                bestCenters = self.centers.copy()
-                bestLabels = clusterLabels
-            elif bestMetric[-1] > self.inertias_[-1]:
-                bestMetric = copy.copy(self.inertias_)
-                bestCenters = self.centers.copy()
-                bestLabels = clusterLabels
-        # reset
-        self.reset()
-        # assign best stored centers and metric
-        self.inertias_, self.centers = bestMetric, bestCenters
-        if len(bestLabels) in range(2, trainData.shape[0]-1):
-            self.silhouette_ = silhouette_score(trainData, bestLabels)
-        else:
-            self.silhouette_ = None
-        return self
+        """fit model to train data
 
-    def fitIteration(self, trainData):
+        Args:
+            trainData (): 
+
+        Returns:
+            KMeans: the KMeans object fitted to the training data
+        """
+        self._fit(trainData)
+
+    def _fitIteration(self, trainData):
         """Compute kmeans centroids for trainData.
         
         Parameters:
-            trainData: {np.ndarray, pd.DataFrame, list} of shape (n_samples, n_features)
+            trainData (np.ndarray, pd.DataFrame, list) of shape (n_samples, n_features):
                 Training instances to compute cluster centers
 
         Returns:
-            self: fitted algorithm
+            clusterLabels: labels
         """
         trainData = convertToNumpy(trainData)
         self._initializeCenters(trainData)
@@ -120,7 +102,7 @@ class KMeans:
         """Compute kmeans labels for trainData given previously computed centroids.
         
         Parameters:
-            data: {np.ndarray, pd.DataFrame, list} of shape (n_samples, n_features)
+            data: (np.ndarray, pd.DataFrame, list) of shape (n_samples, n_features)
                 Training instances to infer.
 
         Returns:
@@ -142,7 +124,7 @@ class KMeans:
         """Compute kmeans centroids for trainData.
         
         Parameters:
-            trainData: {np.ndarray, pd.DataFrame, list} of shape (n_samples, n_features)
+            trainData: (np.ndarray, pd.DataFrame, list) of shape (n_samples, n_features)
                 Training instances to compute cluster centers and to infer labels from.
 
         Returns:
@@ -155,6 +137,44 @@ class KMeans:
     """
     Subfunctions
     """
+
+    def _fit(self, trainData):
+        """fit model to train data
+
+        Args:
+            trainData (np.ndarray, pd.DataFrame, list) of shape (n_samples, n_features):
+                Training instances to compute cluster centers
+
+        Returns:
+            KMeans: the KMeans object fitted to the training data
+        """
+        # initialize best metric
+        bestMetric = None
+        # initialize best centers
+        bestCenters = None
+        bestLabels = None
+        for _ in range(self.nInit):
+            self.reset()
+            # run _fitIteration
+            clusterLabels = self._fitIteration(trainData)
+            # compare best metric
+            if bestMetric is None:
+                bestMetric = copy.copy(self.inertias_)
+                bestCenters = self.centers.copy()
+                bestLabels = clusterLabels
+            elif bestMetric[-1] > self.inertias_[-1]:
+                bestMetric = copy.copy(self.inertias_)
+                bestCenters = self.centers.copy()
+                bestLabels = clusterLabels
+        # reset
+        self.reset()
+        # assign best stored centers and metric
+        self.inertias_, self.centers = bestMetric, bestCenters
+        if len(bestLabels) in range(2, trainData.shape[0]-1):
+            self.silhouette_ = silhouette_score(trainData, bestLabels)
+        else:
+            self.silhouette_ = None
+        return self
 
     def _initializeCenters(self, data):
         """
