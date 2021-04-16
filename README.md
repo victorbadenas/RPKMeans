@@ -24,5 +24,9 @@ abstract = {Due to the progressive growth of the amount of data available in a w
 Dataset retrieved from https://archive.ics.uci.edu/ml/machine-learning-databases/00322/data.zip :
 
 ```bash
+# download and extract
 python scripts/download_data.py -d https://archive.ics.uci.edu/ml/machine-learning-databases/00322/data.zip -n gas_sensor
+
+# normalize format to csv
+python scripts/format_gas_sensor_data.py
 ```
