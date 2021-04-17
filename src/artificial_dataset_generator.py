@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
 class ArtificialDatasetGenerator:
     def __init__(self, K, d, n):
@@ -22,11 +21,3 @@ class ArtificialDatasetGenerator:
 
     def _generate_dataset(self):
         pass
-
-if __name__ == '__main__':
-    afg = ArtificialDatasetGenerator(K=4, d=2, n=100)
-    dataset = afg()
-
-    plt.scatter()
-
-
