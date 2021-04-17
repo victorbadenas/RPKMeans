@@ -2,7 +2,7 @@ import copy
 import numpy as np
 from scipy.spatial.distance import cdist
 from sklearn.metrics import silhouette_score
-from .kmeansPP import KMeansPP
+from .kmeansInit import *
 from ..utils import convertToNumpy, l2norm
 """
 https://en.wikipedia.org/wiki/K-means_clustering
@@ -186,7 +186,7 @@ class KMeans:
         elif self.init == 'first':
             self.centers = data[:self.numberOfClusters]
         elif self.init == 'k-means++':
-            self.centers = KMeansPP(self.numberOfClusters).fit(data).get_centroids()
+            self.centers = KMeansPP(self.numberOfClusters).fit(data).centroids
         else:
             raise ValueError(f"Init parameter {self.init} not supported")
         if self.verbose:
