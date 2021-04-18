@@ -34,7 +34,7 @@ class Main:
 
     def __call__(self, *args, **kwargs):
         data, labels = self.load_supervised(self.parameters.dataset, skip_headers=True)
-        kmeans = KMeans(n_clusters=3, init='kmeans++', n_init=1, verbose=self.parameters.debug)
+        kmeans = KMeans(n_clusters=3, init='rpkm', n_init=1, verbose=self.parameters.debug)
         pred_labels = kmeans.fit_predict(data)
         pass
 

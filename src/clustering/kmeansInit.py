@@ -1,11 +1,11 @@
 import numpy as np
 from scipy.spatial.distance import cdist
 from utils import convertToNumpy
-
+# from .kmeans import KMeans
 
 class BaseInitializer:
     def __init__(self, n_clusters=8):
-        self.numberOfClusters = n_clusters
+        self.n_clusters = n_clusters
         self.centers = None
 
     @property
@@ -64,7 +64,7 @@ class KMeansPP(BaseInitializer):
             [KMeansPP]: [fitted KMeansPP object]
         """
         self._initializeCenters(trainData)
-        for _ in range(self.numberOfClusters - 1):
+        for _ in range(self.n_clusters - 1):
             minCentroidDistance = self._predictClusters(trainData)
             newCenter = self._computeNewCenter(trainData, minCentroidDistance)
             self._updateCenters(newCenter)
@@ -115,5 +115,40 @@ class KMeansPP(BaseInitializer):
 
 
 class RPKM(BaseInitializer):
+    def __init__(self, n_clusters=8, max_iter=100):
+        super(RPKM, self).__init__(n_clusters=n_clusters)
+        self.max_iter = max_iter
+
     def _fit(self, data):
-        pass
+        from .kmeans import KMeans
+        data_indexes = np.arange(data.shape[0])
+        np.random.shuffle(data_indexes)
+        partitions = np.array_split(data_indexes, self.n_clusters)
+        representative = np.array(list(map(lambda indexes: data[indexes].mean(axis=0), partitions)))
+        self.centers = representative.copy()
+        old_centers = None
+        iteration_idx = 0
+        while self.continue_criterion(self.centers, old_centers): # stop condition: difference between centers
+            old_centers = self.centers
+            partitions = self._segment_partitions(partitions, data.shape[1]) # create partitions
+            if len(partitions) >= data.shape[0]:
+                break
+            representative = np.array(list(map(lambda indexes: data[indexes].mean(axis=0), partitions)))
+            self.centers = KMeans(n_clusters=self.n_clusters).fit(representative).centers
+            iteration_idx += 1
+            if iteration_idx >= self.max_iter:
+                break
+        return self
+
+    def continue_criterion(self, new_centers, old_centers):
+        if old_centers is None:
+            return True
+        return False
+
+    def _segment_partitions(self, partition_indexes, d):
+        positions = range(len(partition_indexes))
+        for partition_idx in reversed(positions):
+            subparts = np.array_split(partition_indexes[partition_idx], 2**d)
+            partition_indexes.pop(partition_idx)
+            partition_indexes.extend(subparts)
+        return partition_indexes

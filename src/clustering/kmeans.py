@@ -8,8 +8,8 @@ from utils import convertToNumpy, l2norm
 RANDOM = 'random'
 KMEANSPP = 'kmeans++'
 FIRST = 'first'
-RPKM = 'rpkm'
-INIT_POSSIBILITIES = [RANDOM, KMEANSPP, FIRST, RPKM]
+RPKM_option = 'rpkm'
+INIT_POSSIBILITIES = [RANDOM, KMEANSPP, FIRST, RPKM_option]
 
 class KMeans:
     """KMeans Clustering algorithm:
@@ -77,7 +77,7 @@ class KMeans:
         Returns:
             KMeans: the KMeans object fitted to the training data
         """
-        self._fit(trainData)
+        return self._fit(trainData)
 
     def _fitIteration(self, trainData):
         """Compute kmeans centroids for trainData.
@@ -188,8 +188,8 @@ class KMeans:
             self.centers = data[:self.numberOfClusters]
         elif self.init == KMEANSPP:
             self.centers = KMeansPP(self.numberOfClusters).fit(data).centroids
-        elif self.init == RPKM:
-            self.centers = KMeansPP(self.numberOfClusters).fit(data).centroids
+        elif self.init == RPKM_option:
+            self.centers = RPKM(self.numberOfClusters).fit(data).centroids
         if self.verbose:
             logging.info("Initialization complete")
 
