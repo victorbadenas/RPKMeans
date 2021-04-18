@@ -1,12 +1,15 @@
 import copy
+import logging
 import numpy as np
 from scipy.spatial.distance import cdist
-from sklearn.metrics import silhouette_score
 from .kmeansInit import *
-from ..utils import convertToNumpy, l2norm
-"""
-https://en.wikipedia.org/wiki/K-means_clustering
-"""
+from utils import convertToNumpy, l2norm
+
+RANDOM = 'random'
+KMEANSPP = 'kmeans++'
+FIRST = 'first'
+RPKM = 'rpkm'
+INIT_POSSIBILITIES = [RANDOM, KMEANSPP, FIRST, RPKM]
 
 class KMeans:
     """KMeans Clustering algorithm:
@@ -43,11 +46,13 @@ class KMeans:
             Verbosity mode.
 
     """
-    def __init__(self, n_clusters=8, *, init='k-means++', n_init=10, max_iter=500, tol=1e-4, verbose=False):
+    def __init__(self, n_clusters=8, *, init=KMEANSPP, n_init=10, max_iter=500, tol=1e-4, verbose=False):
         self.numberOfClusters = n_clusters
         self.maxIterations = int(max_iter)
         self.maxStopDistance = tol
         self.verbose = verbose
+        if init not in INIT_POSSIBILITIES:
+            raise ValueError(f"init must be in {INIT_POSSIBILITIES}")
         self.init = init
         self.nInit = n_init
         self.reset()
@@ -93,7 +98,7 @@ class KMeans:
             self._updateCenters(trainData, clusterLabels)
             self.inertias_.append(self._computeInertia(trainData, clusterLabels))
             if self.verbose:
-                print(f"Iteration {iterationIdx} with inertia {self.inertias_[-1]:.2f}")
+                logging.info(f"Iteration {iterationIdx} with inertia {self.inertias_[-1]:.2f}")
             if self._stopIteration(previousCenters, self.centers, previousLabels, clusterLabels):
                 break
         return clusterLabels
@@ -120,7 +125,7 @@ class KMeans:
             raise ValueError(f"{data.shape} is an invalid data structure for kmeans of centers {self.centers.shape}")
         return self._predictClusters(data)
 
-    def fitPredict(self, data):
+    def fit_predict(self, data):
         """Compute kmeans centroids for trainData.
         
         Parameters:
@@ -170,27 +175,23 @@ class KMeans:
         self.reset()
         # assign best stored centers and metric
         self.inertias_, self.centers = bestMetric, bestCenters
-        if len(bestLabels) in range(2, trainData.shape[0]-1):
-            self.silhouette_ = silhouette_score(trainData, bestLabels)
-        else:
-            self.silhouette_ = None
         return self
 
     def _initializeCenters(self, data):
         """
         Initialize centers with method according to self.init
         """
-        if self.init == 'random':
+        if self.init == RANDOM:
             randomRowIdxs = np.random.choice(data.shape[0], self.numberOfClusters)
             self.centers = data[randomRowIdxs]
-        elif self.init == 'first':
+        elif self.init == FIRST:
             self.centers = data[:self.numberOfClusters]
-        elif self.init == 'k-means++':
+        elif self.init == KMEANSPP:
             self.centers = KMeansPP(self.numberOfClusters).fit(data).centroids
-        else:
-            raise ValueError(f"Init parameter {self.init} not supported")
+        elif self.init == RPKM:
+            self.centers = KMeansPP(self.numberOfClusters).fit(data).centroids
         if self.verbose:
-            print("Initialization complete")
+            logging.info("Initialization complete")
 
     @staticmethod
     def _computeNewCenter(trainData, clusterLabels, clusterIdx, currentCenter):
@@ -233,7 +234,7 @@ class KMeans:
         """
         iterationDistance = np.sum(np.abs(newCentroids - previousCentroids))/previousCentroids.shape[1]
         if self.verbose:
-            print(f"Centers have changed: {iterationDistance}")
+            logging.info(f"Centers have changed: {iterationDistance}")
         return iterationDistance < self.maxStopDistance
 
     def _pointsInSameCluster(self, previousLabels, newLabels):
@@ -243,7 +244,7 @@ class KMeans:
         """
         boolArray = previousLabels == newLabels
         if self.verbose:
-            print(f"Classifications changed: {np.sum(previousLabels != newLabels)}/{len(previousLabels)}")
+            logging.info(f"Classifications changed: {np.sum(previousLabels != newLabels)}/{len(previousLabels)}")
         return np.all(boolArray)
 
     def _computeInertia(self, data, dataLabels):

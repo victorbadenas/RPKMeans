@@ -1,9 +1,35 @@
 import numpy as np
 from scipy.spatial.distance import cdist
-from ..utils import convertToNumpy
+from utils import convertToNumpy
 
 
-class KMeansPP:
+class BaseInitializer:
+    def __init__(self, n_clusters=8):
+        self.numberOfClusters = n_clusters
+        self.centers = None
+
+    @property
+    def centroids(self):
+        return self.centers
+
+    def fit(self, trainData):
+        """compute centroids according to the training data
+
+        Args:
+            trainData ([np.array, pd.DataFrame or list of lists]): [data of shape (n_samples, 
+                n_features) from where to compute the centroids]
+
+        Returns:
+            [KMeansPP]: [fitted KMeansPP object]
+        """
+        trainData = convertToNumpy(trainData)
+        return self._fit(trainData)
+
+    def _fit(self, trainData:np.ndarray):
+        raise NotImplementedError('abstract method, implement _fit in the class inheriting')
+
+
+class KMeansPP(BaseInitializer):
     """KmeansPP initializations generator
 
         from: https://en.wikipedia.org/wiki/K-means%2B%2B
@@ -25,26 +51,6 @@ class KMeansPP:
         Args:
             n_clusters (int, optional): [number of centers to be computed]. Defaults to 8.
     """
-    def __init__(self, n_clusters=8):
-        self.numberOfClusters = n_clusters
-        self.centers = None
-
-    @property
-    def centroids(self):
-        return self.centers
-
-    def fit(self, trainData):
-        """compute centroids according to the training data
-
-        Args:
-            trainData ([np.array, pd.DataFrame or list of lists]): [data of shape (n_samples, 
-                n_features) from where to compute the centroids]
-
-        Returns:
-            [KMeansPP]: [fitted KMeansPP object]
-        """
-        trainData = convertToNumpy(trainData)
-        return self._fit(trainData)
 
     def _fit(self, trainData:np.ndarray):
         """internal fit method. Iterates over the number of clusters to compute the distances 
@@ -107,3 +113,7 @@ class KMeansPP:
         l2distances = cdist(data, self.centers)
         return np.min(l2distances, axis=1)
 
+
+class RPKM(BaseInitializer):
+    def _fit(self, data):
+        pass

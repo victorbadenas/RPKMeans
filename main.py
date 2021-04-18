@@ -1,10 +1,13 @@
 import sys
 import argparse
 import logging
+import numpy as np
 from pathlib import Path
 
-sys.path.append(Path(__file__).parent)
-sys.path.append(Path(__file__).parent / 'src')
+sys.path.append(str(Path(__file__).parent))
+sys.path.append(str(Path(__file__).parent / 'src'))
+
+from clustering.kmeans import KMeans
 
 def set_logger(log_file_path, debug=False):
     level = logging.DEBUG if debug else logging.INFO
@@ -19,19 +22,29 @@ def set_logger(log_file_path, debug=False):
 def parseArgumentsFromCommandLine():
     parser = argparse.ArgumentParser("")
     parser.add_argument('-l', "--logger", type=Path, default="log.log")
+    parser.add_argument('-i', '--dataset', type=Path, default="data/iris.data")
+    parser.add_argument('-d', '--debug', action='store_true', default=False)
     return parser.parse_args()
 
 
 class Main:
-    def __init__(self, args):
-        logging.info("__init__")
-        logging.info(args)
+    def __init__(self, parameters):
+        logging.info(parameters)
+        self.parameters = parameters
 
     def __call__(self, *args, **kwargs):
-        logging.info("__call__")
+        data, labels = self.load_supervised(self.parameters.dataset, skip_headers=True)
+        kmeans = KMeans(n_clusters=3, init='kmeans++', n_init=1, verbose=self.parameters.debug)
+        pred_labels = kmeans.fit_predict(data)
+        pass
+
+    @staticmethod
+    def load_supervised(path, skip_headers=False):
+        data = np.genfromtxt(path, dtype=str, skip_header=1 if skip_headers else 0, delimiter=',')
+        return data[:,:-1].astype(np.float16), data[:,-1]
 
 
 if __name__ == "__main__":
-    args = parseArgumentsFromCommandLine()
-    set_logger(args.logger)
-    Main(args)()
+    parameters = parseArgumentsFromCommandLine()
+    set_logger(parameters.logger)
+    Main(parameters)()
