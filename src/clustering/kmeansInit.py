@@ -20,7 +20,7 @@ class BaseInitializer:
                 n_features) from where to compute the centroids]
 
         Returns:
-            [KMeansPP]: [fitted KMeansPP object]
+            [Initializer]: [fitted Initializer object]
         """
         trainData = convertToNumpy(trainData)
         return self._fit(trainData)
@@ -115,40 +115,111 @@ class KMeansPP(BaseInitializer):
 
 
 class RPKM(BaseInitializer):
-    def __init__(self, n_clusters=8, max_iter=100):
+    def __init__(self, n_clusters=8, max_iter=6, distance_threshold=1e-4):
         super(RPKM, self).__init__(n_clusters=n_clusters)
+        self.reset()
         self.max_iter = max_iter
+        self.n_clusters = n_clusters
+        self.distance_threshold = distance_threshold
+
+    def reset(self):
+        self.centers = None
 
     def _fit(self, data):
+        self.n_dim = data.shape[1]
         from .kmeans import KMeans
-        data_indexes = np.arange(data.shape[0])
-        np.random.shuffle(data_indexes)
-        partitions = np.array_split(data_indexes, self.n_clusters)
-        representative = np.array(list(map(lambda indexes: data[indexes].mean(axis=0), partitions)))
-        self.centers = representative.copy()
-        old_centers = None
-        iteration_idx = 0
-        while self.continue_criterion(self.centers, old_centers): # stop condition: difference between centers
-            old_centers = self.centers
-            partitions = self._segment_partitions(partitions, data.shape[1]) # create partitions
-            if len(partitions) >= data.shape[0]:
+        partitions = self.binary_partition(data, max_depth=self.max_iter)
+        partition_meta = self.extract_meta_from_partition(partitions)
+
+        for i, (R, cardinality) in partition_meta.items():
+            if len(cardinality) < self.n_clusters:
+                continue
+            elif self.centers is None:
+                centers_idx = np.random.choice(range(len(cardinality)), self.n_clusters, replace=False)
+                self.centers = R[centers_idx]
+                if self.centers.shape[0] == self.n_clusters:
+                    continue
+
+            old_centers = self.centers.copy()
+            self.centers = KMeans(
+                n_clusters=self.n_clusters, 
+                init=self.centers,
+                n_init=1,
+                verbose=True
+            ).fit(
+                R,
+                sample_weights=cardinality
+            ).centers
+
+            if self.stopCriterion(old_centers):
                 break
-            representative = np.array(list(map(lambda indexes: data[indexes].mean(axis=0), partitions)))
-            self.centers = KMeans(n_clusters=self.n_clusters).fit(representative).centers
-            iteration_idx += 1
-            if iteration_idx >= self.max_iter:
-                break
+
         return self
 
-    def continue_criterion(self, new_centers, old_centers):
-        if old_centers is None:
-            return True
-        return False
+    def stopCriterion(self, old_centers):
+        return cdist(self.centers, old_centers).diagonal().max() < self.distance_threshold
 
-    def _segment_partitions(self, partition_indexes, d):
-        positions = range(len(partition_indexes))
-        for partition_idx in reversed(positions):
-            subparts = np.array_split(partition_indexes[partition_idx], 2**d)
-            partition_indexes.pop(partition_idx)
-            partition_indexes.extend(subparts)
-        return partition_indexes
+    @staticmethod
+    def extract_meta_from_partition(partitions:dict):
+        partition_stats = dict()
+        for k, v in partitions.items():
+            partition_stats[k] = (
+                np.array([i.mean(axis=0) for i in v]),
+                [float(i.shape[0]) for i in v]
+        )
+        return partition_stats
+
+    def binary_partition(self, data, depth=0, max_depth=2, max_=None, min_=None, thresholds=None, partitions=None):
+        n_dim = data.shape[1]
+
+        if thresholds is None:
+            thresholds = np.zeros((n_dim,))
+
+        if max_ is None:
+            max_ = np.ones((n_dim,))
+        elif isinstance(max_, int):
+            max_ = max_ * np.ones((n_dim,))
+
+        if min_ is None:
+            min_ = -1*np.ones((n_dim,))
+        elif isinstance(min_, int):
+            min_ = min_ * np.ones((n_dim,))
+
+        if depth > max_depth - 1:
+            return
+
+        if partitions is None:
+            partitions = dict()
+
+        # build binary classification array for subspace
+        comps = np.array([data[:, dim] > thresholds[dim] for dim in range(n_dim)]).astype(int)
+
+        # convert bits to uint8
+        hypercube_idx = np.packbits(comps, axis=0, bitorder='little').flatten()
+
+        local_partitions = [data[hypercube_idx == i] for i in set(hypercube_idx)]
+        if depth not in partitions:
+            partitions[depth] = list()
+        partitions[depth].extend(local_partitions)
+
+        for i, partition in zip(set(hypercube_idx), local_partitions):
+            sub_max = max_.copy()
+            sub_min = min_.copy()
+            sub_th = thresholds.copy()
+            bin_rep = np.unpackbits(np.array([i], dtype=np.uint8), bitorder='little', count=n_dim)
+            for i, b in enumerate(bin_rep):
+                if b == 1:
+                    sub_min[i] = sub_th[i]
+                else:
+                    sub_max[i] = sub_th[i]
+                sub_th[i] = (sub_max[i] + sub_min[i])/2
+            ret = self.binary_partition(partition, 
+                                depth=depth+1, 
+                                max_depth=max_depth,
+                                max_=sub_max,
+                                min_=sub_min,
+                                thresholds=sub_th,
+                                partitions=partitions)
+            if isinstance(ret, dict):
+                partitions = ret
+        return partitions

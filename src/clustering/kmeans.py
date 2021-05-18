@@ -51,9 +51,13 @@ class KMeans:
         self.maxIterations = int(max_iter)
         self.maxStopDistance = tol
         self.verbose = verbose
-        if init not in INIT_POSSIBILITIES:
+        if isinstance(init, np.ndarray):
+            self.init = init.copy()
+        elif init in INIT_POSSIBILITIES:
+            self.init = init
+        else:
             raise ValueError(f"init must be in {INIT_POSSIBILITIES}")
-        self.init = init
+        
         self.nInit = n_init
         self.reset()
 
@@ -68,7 +72,7 @@ class KMeans:
         self.centers = None
         self.inertias_ = []
 
-    def fit(self, trainData):
+    def fit(self, trainData, sample_weights=None):
         """fit model to train data
 
         Args:
@@ -77,9 +81,9 @@ class KMeans:
         Returns:
             KMeans: the KMeans object fitted to the training data
         """
-        return self._fit(trainData)
+        return self._fit(trainData, sampleWeights=sample_weights)
 
-    def _fitIteration(self, trainData):
+    def _fitIteration(self, trainData, sampleWeights=None):
         """Compute kmeans centroids for trainData.
         
         Parameters:
@@ -90,12 +94,22 @@ class KMeans:
             clusterLabels: labels
         """
         trainData = convertToNumpy(trainData)
+
+        if sampleWeights is None:
+            sampleWeights = np.ones((trainData.shape[0],))
+
+        sampleWeights = np.array(sampleWeights)
+        sampleWeights /= np.sum(sampleWeights)
+
+        assert sampleWeights.shape[0] == trainData.shape[0], 'mismatched weights'
+
         self._initializeCenters(trainData)
         clusterLabels = np.random.randint(0, high=self.numberOfClusters, size=(trainData.shape[0],))
+
         for iterationIdx in range(self.maxIterations):
             previousLabels, previousCenters = clusterLabels, self.centers.copy()
             clusterLabels = self._predictClusters(trainData)
-            self._updateCenters(trainData, clusterLabels)
+            self._updateCenters(trainData, clusterLabels, sampleWeights)
             self.inertias_.append(self._computeInertia(trainData, clusterLabels))
             if self.verbose:
                 logging.info(f"Iteration {iterationIdx} with inertia {self.inertias_[-1]:.2f}")
@@ -143,7 +157,7 @@ class KMeans:
     Subfunctions
     """
 
-    def _fit(self, trainData):
+    def _fit(self, trainData, sampleWeights=None):
         """fit model to train data
 
         Args:
@@ -161,7 +175,7 @@ class KMeans:
         for _ in range(self.nInit):
             self.reset()
             # run _fitIteration
-            clusterLabels = self._fitIteration(trainData)
+            clusterLabels = self._fitIteration(trainData, sampleWeights=sampleWeights)
             # compare best metric
             if bestMetric is None:
                 bestMetric = copy.copy(self.inertias_)
@@ -181,7 +195,10 @@ class KMeans:
         """
         Initialize centers with method according to self.init
         """
-        if self.init == RANDOM:
+        if isinstance(self.init, np.ndarray):
+            assert self.init.shape == (self.numberOfClusters, data.shape[1])
+            self.centers = self.init
+        elif self.init == RANDOM:
             randomRowIdxs = np.random.choice(data.shape[0], self.numberOfClusters)
             self.centers = data[randomRowIdxs]
         elif self.init == FIRST:
@@ -194,7 +211,7 @@ class KMeans:
             logging.info("Initialization complete")
 
     @staticmethod
-    def _computeNewCenter(trainData, clusterLabels, clusterIdx, currentCenter):
+    def _computeNewCenter(trainData, clusterLabels, clusterIdx, currentCenter, sampleWeights):
         """
         Computes new center as the mean vector of all the data points in a cluster
         as defined by:
@@ -202,14 +219,18 @@ class KMeans:
         .. math::
             c_i = \\frac{1}{\left | S_{i} \\right |}\sum_{x_i\in S_i}x_i
         """
-        return np.mean(trainData[clusterLabels == clusterIdx], axis=0)
+        # return np.mean(trainData[clusterLabels == clusterIdx], axis=0)
+        data = trainData[clusterLabels == clusterIdx]
+        w = sampleWeights[clusterLabels == clusterIdx][:, None]
+        w /= np.sum(w)
+        return np.sum(data * w, axis=0)
 
-    def _updateCenters(self, trainData, clusterLabels):
+    def _updateCenters(self, trainData, clusterLabels, sampleWeights):
         """
         Iterator wrapper function to call _computeNewCenter for each center.
         """
         for clusterIdx, center in enumerate(self.centers):
-            self.centers[clusterIdx] = self._computeNewCenter(trainData, clusterLabels, clusterIdx, center)
+            self.centers[clusterIdx] = self._computeNewCenter(trainData, clusterLabels, clusterIdx, center, sampleWeights)
 
     def _predictClusters(self, data):
         """
