@@ -1,6 +1,5 @@
 certifi==2020.12.5
 ipykernel==5.3.4
-matplotlib==3.4.1
 numba==0.53.1
 pandas==1.2.4
 pip-chill==1.0.1
