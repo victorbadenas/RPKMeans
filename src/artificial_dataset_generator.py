@@ -8,12 +8,14 @@ class ArtificialDatasetGenerator:
         n_features: int,
         n_samples: int,
         normalize: bool=True,
+        n_replicas: int=-1,
         **dataset_kwargs):
 
         self.n_centers_ = n_centers
         self.n_features_ = n_features
         self.n_samples_ = n_samples
         self.normalize = normalize
+        self.n_replicas_ = n_replicas
         self.dataset_kwargs = dataset_kwargs
 
     def __call__(self):
@@ -22,10 +24,10 @@ class ArtificialDatasetGenerator:
             x = self._normalize_dataset(x)
         return x, y
 
-    def __iter__(self):
-        return self
-
-    def __getitem__(self, *args, **kwargs):
+    def __getitem__(self, idx):
+        if self.n_replicas_ > 0:
+            if idx >= self.n_replicas_:
+                raise StopIteration
         return self()
 
     @property

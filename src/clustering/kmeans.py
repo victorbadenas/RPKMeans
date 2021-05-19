@@ -61,6 +61,10 @@ class KMeans:
         self.nInit = n_init
         self.reset()
 
+    @property
+    def distance_computations(self):
+        return self.distance_computations_
+
     """
     Main call functions for the algorithm:
     - fit: compute centers adequate to a dataset X
@@ -71,6 +75,7 @@ class KMeans:
     def reset(self):
         self.centers = None
         self.inertias_ = []
+        self.distance_computations_ = 0
 
     def fit(self, trainData, sample_weights=None):
         """fit model to train data
@@ -185,8 +190,6 @@ class KMeans:
                 bestMetric = copy.copy(self.inertias_)
                 bestCenters = self.centers.copy()
                 bestLabels = clusterLabels
-        # reset
-        self.reset()
         # assign best stored centers and metric
         self.inertias_, self.centers = bestMetric, bestCenters
         return self
@@ -198,15 +201,24 @@ class KMeans:
         if isinstance(self.init, np.ndarray):
             assert self.init.shape == (self.numberOfClusters, data.shape[1])
             self.centers = self.init
+
         elif self.init == RANDOM:
             randomRowIdxs = np.random.choice(data.shape[0], self.numberOfClusters)
             self.centers = data[randomRowIdxs]
+
         elif self.init == FIRST:
             self.centers = data[:self.numberOfClusters]
+
         elif self.init == KMEANSPP:
-            self.centers = KMeansPP(self.numberOfClusters).fit(data).centroids
+            kmpp = KMeansPP(self.numberOfClusters).fit(data)
+            self.centers = kmpp.centroids
+            self.distance_computations_ += kmpp.distance_computations
+
         elif self.init == RPKM_option:
-            self.centers = RPKM(self.numberOfClusters).fit(data).centroids
+            rpkm = RPKM(self.numberOfClusters).fit(data)
+            self.centers = rpkm.centroids
+            self.distance_computations_ += rpkm.distance_computations
+
         if self.verbose:
             logging.info("Initialization complete")
 
@@ -239,6 +251,7 @@ class KMeans:
         It will result in a l2distances matrix of shape (n_samples, n_clusters) of which the
         argmin function will return a (n_samples,) vector with the cluster assignation.
         """
+        self.distance_computations_ += data.shape[0] * self.centers.shape[0]
         l2distances = cdist(data, self.centers)
         return np.argmin(l2distances, axis=1)
 
@@ -284,3 +297,28 @@ class KMeans:
             clusterCenter = self.centers[clusterIdx]
             inertia += np.sum(l2norm(clusterData, clusterCenter))
         return inertia
+
+    def _initializeCenters(self, data):
+        """
+        Initialize centers with method according to self.init
+        """
+        if isinstance(self.init, np.ndarray):
+            assert self.init.shape == (self.numberOfClusters, data.shape[1])
+            self.centers = self.init
+
+        elif self.init == RANDOM:
+            randomRowIdxs = np.random.choice(data.shape[0], self.numberOfClusters)
+            self.centers = data[randomRowIdxs]
+
+        elif self.init == FIRST:
+            self.centers = data[:self.numberOfClusters]
+
+        elif self.init == KMEANSPP:
+            kmpp = KMeansPP(self.numberOfClusters).fit(data)
+            self.centers = kmpp.centroids
+            self.distance_computations_ += kmpp.distance_computations
+
+        elif self.init == RPKM_option:
+            rpkm = RPKM(self.numberOfClusters).fit(data)
+            self.centers = rpkm.centroids
+            self.distance_computations_ += rpkm.distance_computations

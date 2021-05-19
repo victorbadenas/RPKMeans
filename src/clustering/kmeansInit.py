@@ -6,7 +6,12 @@ from utils import convertToNumpy
 class BaseInitializer:
     def __init__(self, n_clusters=8):
         self.n_clusters = n_clusters
+        self.distance_computations_ = 0
         self.centers = None
+
+    @property
+    def distance_computations(self):
+        return self.distance_computations_
 
     @property
     def centroids(self):
@@ -110,6 +115,7 @@ class KMeansPP(BaseInitializer):
         Returns:
             [labels]: [(n_samples,) label array]
         """
+        self.distance_computations_ += data.shape[0] * self.centers.shape[0]
         l2distances = cdist(data, self.centers)
         return np.min(l2distances, axis=1)
 
@@ -124,6 +130,11 @@ class RPKM(BaseInitializer):
 
     def reset(self):
         self.centers = None
+        self.distance_computations_ = 0
+
+    @property
+    def distance_computations(self):
+        return self.distance_computations_
 
     def _fit(self, data):
         self.n_dim = data.shape[1]
@@ -141,15 +152,16 @@ class RPKM(BaseInitializer):
                     continue
 
             old_centers = self.centers.copy()
-            self.centers = KMeans(
+            km = KMeans(
                 n_clusters=self.n_clusters, 
                 init=self.centers,
-                n_init=1,
-                verbose=True
+                n_init=1
             ).fit(
                 R,
                 sample_weights=cardinality
-            ).centers
+            )
+            self.centers = km.centers
+            self.distance_computations_ += km.distance_computations
 
             if self.stopCriterion(old_centers):
                 break
@@ -157,6 +169,7 @@ class RPKM(BaseInitializer):
         return self
 
     def stopCriterion(self, old_centers):
+        self.distance_computations_ += self.centers.shape[0] * old_centers.shape[0]
         return cdist(self.centers, old_centers).diagonal().max() < self.distance_threshold
 
     @staticmethod
