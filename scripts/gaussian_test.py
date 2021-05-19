@@ -17,7 +17,7 @@ np.random.seed(SEED)
 colors = list(mcolors.TABLEAU_COLORS.values())[:8]
 sys.path.append('../src')
 
-if not os.path.exists('../images/{SEED}/'):
+if not os.path.exists(f'../images/{SEED}/'):
     os.makedirs(f'../images/{SEED}/')
 
 from artificial_dataset_generator import ArtificialDatasetGenerator
@@ -30,8 +30,6 @@ n_samples = 10000
 
 
 adg = ArtificialDatasetGenerator(n_centers=n_centers, n_features=n_features, n_samples=n_samples, normalize=True, cluster_std=.1)
-
-
 x, y = adg()
 
 
@@ -173,7 +171,7 @@ data_indexes = np.arange(data.shape[0])
 n_dim = data.shape[1]
 
 
-from collections import defaultdict
+
 def binary_partition(data, depth=0, max_depth=2, max_=None, min_=None, thresholds=None, partitions=None):
     n_dim = data.shape[1]
 
