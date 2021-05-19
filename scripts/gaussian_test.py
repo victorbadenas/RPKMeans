@@ -1,5 +1,6 @@
 import sys
 import numpy as np
+from pathlib import Path
 from scipy.spatial.distance import cdist
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
@@ -15,10 +16,11 @@ random.seed(SEED)
 np.random.seed(SEED)
 
 colors = list(mcolors.TABLEAU_COLORS.values())[:8]
-sys.path.append('../src')
+sys.path.append('src')
 
-if not os.path.exists(f'../images/{SEED}/'):
-    os.makedirs(f'../images/{SEED}/')
+OUT_PATH = Path(f'images/{SEED}_2/')
+if not os.path.exists(OUT_PATH):
+    os.makedirs(OUT_PATH)
 
 from artificial_dataset_generator import ArtificialDatasetGenerator
 from clustering.kmeans import KMeans
@@ -29,7 +31,7 @@ n_features = 2
 n_samples = 10000
 
 
-adg = ArtificialDatasetGenerator(n_centers=n_centers, n_features=n_features, n_samples=n_samples, normalize=True, cluster_std=.1)
+adg = ArtificialDatasetGenerator(n_centers=n_centers, n_features=n_features, n_samples=n_samples, normalize=True)
 x, y = adg()
 
 
@@ -71,7 +73,7 @@ def plot(x, y, grid_lines=None, title:str="", ideal:bool=True, alpha:float=0, ra
         plt.show()
 
 
-plot(x, y, title='Ground Truth', figsize=(6, 6), save_path=f'../images/{SEED}/ground_truth_random.png', )
+plot(x, y, title='Ground Truth', figsize=(6, 6), save_path=OUT_PATH / 'ground_truth_random.png')
 
 
 def plot_ax(ax, x, y, grid_lines=None, title:str="", ideal:bool=True, alpha:float=0, range=(-1, 1), legend=True, **kwargs):
@@ -258,7 +260,7 @@ for i, (R, cardinality) in partition_stats.items():
     accum_centers.append(centers)
     plot_center_lines_iteration_ax(axes[i], old_centers, centers, representatives=R, data=data, alpha=.3, title=f"partition {i}", range=[-1, 1])
 
-plt.savefig(f'../images/{SEED}/steps.png')
+plt.savefig(OUT_PATH/'steps.png')
 plt.show()
 
 
@@ -269,9 +271,9 @@ for k, v in partitions.items():
     thresholds = np.linspace(-1, 1, 2**(k+1)+1)
     labels = [np.full((mat.shape[0],), i) for i, mat in enumerate(v)]
     plot_ax(axes[k], np.concatenate(v), np.concatenate(labels), grid_lines=thresholds, ideal=False, title=f'depth {k}', figsize=(10, 10), legend=False)
-plt.savefig(f'../images/{SEED}/alldepths.png')
+plt.savefig(OUT_PATH/'alldepths.png')
 
 
-plot_center_lines(np.array(accum_centers), data, figsize=(9, 9), save_path=f'../images/{SEED}/summary_iteration.png', range=[-1, 1])
+plot_center_lines(np.array(accum_centers), data, figsize=(9, 9), save_path=OUT_PATH/'summary_iteration.png', range=[-1, 1])
 
 
