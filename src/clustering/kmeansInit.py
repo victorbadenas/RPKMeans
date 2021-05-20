@@ -1,4 +1,5 @@
 import numpy as np
+import logging
 from scipy.spatial.distance import cdist
 from utils import convertToNumpy
 # from .kmeans import KMeans
@@ -165,11 +166,14 @@ class RPKM(BaseInitializer):
 
             if self.stopCriterion(old_centers):
                 break
-
+        else:
+            if self.centers is None:
+                logging.warning('centers could not be initialized, falling back to random')
+                randomRowIdxs = np.random.choice(data.shape[0], self.n_clusters, replace=False)
+                self.centers = data[randomRowIdxs]
         return self
 
     def stopCriterion(self, old_centers):
-        self.distance_computations_ += self.centers.shape[0] * old_centers.shape[0]
         return cdist(self.centers, old_centers).diagonal().max() < self.distance_threshold
 
     @staticmethod

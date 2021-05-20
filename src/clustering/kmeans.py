@@ -46,7 +46,7 @@ class KMeans:
             Verbosity mode.
 
     """
-    def __init__(self, n_clusters=8, *, init=KMEANSPP, n_init=10, max_iter=500, tol=1e-4, verbose=False):
+    def __init__(self, n_clusters=8, *, init=KMEANSPP, n_init=10, max_iter=500, tol=1e-4, verbose=False, rpkm_max_iter=6):
         self.numberOfClusters = n_clusters
         self.maxIterations = int(max_iter)
         self.maxStopDistance = tol
@@ -57,7 +57,7 @@ class KMeans:
             self.init = init
         else:
             raise ValueError(f"init must be in {INIT_POSSIBILITIES}")
-        
+        self.rpkm_max_iter = rpkm_max_iter
         self.nInit = n_init
         self.reset()
 
@@ -319,6 +319,6 @@ class KMeans:
             self.distance_computations_ += kmpp.distance_computations
 
         elif self.init == RPKM_option:
-            rpkm = RPKM(self.numberOfClusters).fit(data)
+            rpkm = RPKM(self.numberOfClusters, max_iter=self.rpkm_max_iter).fit(data)
             self.centers = rpkm.centroids
             self.distance_computations_ += rpkm.distance_computations
