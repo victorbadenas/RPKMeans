@@ -45,13 +45,13 @@ def parseArgumentsFromCommandLine():
 
 if __name__ == '__main__':
     args = parseArgumentsFromCommandLine()
-    data_folder = args.data_folder / 'gas_sensor'
+    data_folder = args.data_folder
 
     for file_path in data_folder.rglob('*.txt'):
         first = True
         for line in tqdm.tqdm(iter_file(file_path)):
             if first:
-                headers = list(map(lambda x: x.strip(), line.split(',')))[:3]
+                headers = list(map(lambda x: x.strip().replace(' ', '_'), line.split(',')))[:3]
                 headers += list(map(lambda x: f'attr{x}', range(16)))
                 csv_file_writer = CsvFileWriter(file_path.with_suffix('.csv'), 
                     headers=headers)
