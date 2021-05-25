@@ -77,7 +77,7 @@ class KMeans:
         self.inertias_ = []
         self.distance_computations_ = 0
 
-    def fit(self, trainData, sample_weights=None):
+    def fit(self, trainData, sample_weight=None):
         """fit model to train data
 
         Args:
