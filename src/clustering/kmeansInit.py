@@ -2,7 +2,8 @@ import numpy as np
 import logging
 from scipy.spatial.distance import cdist
 from utils import convertToNumpy
-# from .kmeans import KMeans
+from sklearn.cluster import KMeans
+
 
 class BaseInitializer:
     def __init__(self, n_clusters=8):
@@ -122,9 +123,10 @@ class KMeansPP(BaseInitializer):
 
 
 class RPKM(BaseInitializer):
-    def __init__(self, n_clusters=8, max_iter=6, distance_threshold=1e-4):
+    def __init__(self, n_clusters=8, max_iter=6, distance_threshold=1e-4, n_jobs=-1):
         super(RPKM, self).__init__(n_clusters=n_clusters)
         self.reset()
+        self.n_jobs = n_jobs
         self.max_iter = max_iter
         self.n_clusters = n_clusters
         self.distance_threshold = distance_threshold
@@ -139,8 +141,7 @@ class RPKM(BaseInitializer):
 
     def _fit(self, data):
         self.n_dim = data.shape[1]
-        from .kmeans import KMeans
-        partitions = self.binary_partition(data, max_depth=self.max_iter)
+        partitions = self.binary_partition(data, max_depth=self.max_iter+1)
         partition_meta = self.extract_meta_from_partition(partitions)
 
         for i, (R, cardinality) in partition_meta.items():
@@ -156,13 +157,15 @@ class RPKM(BaseInitializer):
             km = KMeans(
                 n_clusters=self.n_clusters, 
                 init=self.centers,
-                n_init=1
+                n_init=1,
+                algorithm='full', # lloyd
+                n_jobs=self.n_jobs
             ).fit(
                 R,
-                sample_weights=cardinality
+                sample_weight=cardinality
             )
-            self.centers = km.centers
-            self.distance_computations_ += km.distance_computations
+            self.centers = km.cluster_centers_
+            self.distance_computations_ += km.n_iter_ * self.n_clusters * R.shape[0]
 
             if self.stopCriterion(old_centers):
                 break
