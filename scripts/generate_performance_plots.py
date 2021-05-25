@@ -12,6 +12,7 @@ colors = list(mcolors.TABLEAU_COLORS.values())
 def parse_args():
     parser = argparse.ArgumentParser('Script to generate plots from a results csv')
     parser.add_argument('-i', '--csvPath', type=Path, help='path to csv file', default='results/artificial.csv')
+    parser.add_argument('-t', '--targetvar', type=str, help='csv variable to plot', default='distance_calculations_average')
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -20,7 +21,7 @@ if __name__ == "__main__":
     data = pd.read_csv(args.csvPath)
 
     x_name = 'n_samples'
-    var_name = 'fit_time_average'
+    var_name = args.targetvar
     m_name = 'n_clusters'
     n_name = 'n_dims'
     model_kwargs = ['init', 'rpkm_max_iter']
@@ -28,7 +29,7 @@ if __name__ == "__main__":
     M = data[m_name].unique()
     N = data[n_name].unique()
 
-    f, axes = plt.subplots(len(N), len(M), figsize=(10, 10), sharex=True)
+    f, axes = plt.subplots(len(N), len(M), figsize=(15, 15), sharex=True)
 
     for i, n in enumerate(N):
         for j, m in enumerate(M):
@@ -53,5 +54,5 @@ if __name__ == "__main__":
                 axes[i][j].set_ylabel(var_name)
             axes[i][j].set_title(f'{n_name}:{n}, {m_name}:{m}')
     f.suptitle(f'{var_name} vs {x_name}', fontsize=16)
-    plt.tight_layout()
+    # plt.tight_layout()
     plt.savefig(f'images/{var_name}.png', dpi=400)
