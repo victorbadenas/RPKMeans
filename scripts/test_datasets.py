@@ -18,9 +18,10 @@ sys.path.append('src')
 def warn(*args, **kwargs):
     pass
 warnings.warn = warn
+
 from dataset import PandasUnsupervised
-from clustering.kmeansInit import RPKM
-from sklearn.cluster import KMeans
+from cluster import RPKM
+from sklearn.cluster import KMeans, MiniBatchKMeans
 
 SEED = 1995
 random.seed(SEED)
@@ -35,13 +36,16 @@ N_SAMPLES = [4000, 12000, 40000, 120000, 400000, 1200000, 4000000]
 N_THREADS = 1 # int or None to use all of them
 
 KWARGS = [
-    {"init": 'k-means++', "rpkm_max_iter": None},
-    {"init": 'rpkm', "rpkm_max_iter": 1},
-    {"init": 'rpkm', "rpkm_max_iter": 2},
-    {"init": 'rpkm', "rpkm_max_iter": 3},
-    {"init": 'rpkm', "rpkm_max_iter": 4},
-    {"init": 'rpkm', "rpkm_max_iter": 5},
-    {"init": 'rpkm', "rpkm_max_iter": 6},
+    {"algorithm": 'k-means++', "param": None},
+    {"algorithm": 'rpkm', "param": 1},
+    {"algorithm": 'rpkm', "param": 2},
+    {"algorithm": 'rpkm', "param": 3},
+    {"algorithm": 'rpkm', "param": 4},
+    {"algorithm": 'rpkm', "param": 5},
+    {"algorithm": 'rpkm', "param": 6},
+    {"algorithm": "mb-kmeans", "param": 100},
+    {"algorithm": "mb-kmeans", "param": 500},
+    {"algorithm": "mb-kmeans", "param": 1000},
 ]
 
 OUT_FOLDER.mkdir(parents=True, exist_ok=True)
@@ -73,15 +77,32 @@ def compute(dataset, n_clusters, n_dims, n_samples, k_means_kwargs, computationi
 
     data = dataset.sample(n_samples, replace=False).sample(n_dims, axis=1)
     st = time.time()
-    if k_means_kwargs['init'] == 'rpkm':
-        initctf = RPKM(n_clusters=n_clusters, max_iter=k_means_kwargs['rpkm_max_iter'], n_jobs=-1).fit(data)
-        init = initctf.centroids
-        distance_calculations = initctf.distance_computations
-    else:
-        init = k_means_kwargs['init']
-        distance_calculations = n_clusters * n_clusters * data.shape[0]
+    if k_means_kwargs["algorithm"] == 'rpkm':
+        clf = RPKM(
+            n_clusters=n_clusters,
+            max_iter=k_means_kwargs['param'],
+            n_jobs=-1
+        ).fit(data)
+        distance_calculations = clf.distance_computations
 
-        clf = KMeans(n_clusters=n_clusters, init=init, n_init=1, n_jobs=-1).fit(data)
+    elif k_means_kwargs["algorithm"] == 'mb-kmeans':
+        distance_calculations = n_clusters * n_clusters * data.shape[0]
+        clf = MiniBatchKMeans(
+            n_clusters=n_clusters,
+            init='k-means++',
+            n_init=1,
+            batch_size=k_means_kwargs['param'],
+        ).fit(data)
+        distance_calculations += n_clusters * k_means_kwargs['param'] * clf.n_iter_
+
+    else:
+        distance_calculations = n_clusters * n_clusters * data.shape[0]
+        clf = KMeans(
+            n_clusters=n_clusters,
+            init=k_means_kwargs["algorithm"],
+            n_init=1,
+            n_jobs=-1
+        ).fit(data)
         distance_calculations += n_clusters * data.shape[0] * clf.n_iter_
 
     fit_time = time.time() - st
@@ -97,7 +118,6 @@ if __name__ == '__main__':
     pdataset = PandasUnsupervised(parameters.dataset).data
     if len(parameters.dropColumns) > 0:
         pdataset = pdataset.drop(parameters.dropColumns, axis=1)
-    pdataset = 2*(pdataset - 0.5)
     logging.info(pdataset.describe())
 
     combinations = list(product(N_CLUSTERS, N_DIMS, N_SAMPLES, KWARGS, list(range(N_REPLICAS))))

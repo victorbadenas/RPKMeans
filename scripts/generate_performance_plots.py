@@ -24,7 +24,7 @@ if __name__ == "__main__":
     var_name = args.targetvar
     m_name = 'n_clusters'
     n_name = 'n_dims'
-    model_kwargs = ['init', 'rpkm_max_iter']
+    model_kwargs = ['algorithm', 'param']
 
     M = data[m_name].unique()
     N = data[n_name].unique()
@@ -46,13 +46,16 @@ if __name__ == "__main__":
                 y = ax_data_[var_name]
                 axes[i][j].loglog(x, y, label=":".join(model.values()), marker='x', color=colors[color_idx%len(colors)])
             axes[i][j].grid('on')
-            axes[i][j].legend()
+            # axes[i][j].legend()
 
             if i == len(N) - 1:
                 axes[i][j].set_xlabel(x_name)
             if j == 0:
                 axes[i][j].set_ylabel(var_name)
             axes[i][j].set_title(f'{n_name}:{n}, {m_name}:{m}')
+
+    handles, labels = axes[i][j].get_legend_handles_labels()
+    f.legend(handles, labels)
     f.suptitle(f'{var_name} vs {x_name}', fontsize=16)
     # plt.tight_layout()
     plt.savefig(f'images/{var_name}.png', dpi=400)
