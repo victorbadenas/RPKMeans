@@ -29,11 +29,11 @@ np.random.seed(SEED)
 pb = None
 
 OUT_FOLDER = Path('results/')
-N_REPLICAS = 50
-N_CLUSTERS = [3, 9]
-N_DIMS = [2, 4, 8]
-N_SAMPLES = [1e2, 1e3, 1e4, 1e5, 1e6]
-N_THREADS = None # int or None to use all of them
+N_REPLICAS = 10
+N_CLUSTERS = [9, 3] #[3, 9]
+N_DIMS = [8, 4, 2] #[2, 4, 8]
+N_SAMPLES = [1e5, 1e4, 1e3, 1e2] # [1e2, 1e3, 1e4, 1e5, 1e6]
+N_THREADS = 1 # int or None to use all of them
 
 KWARGS = [
     {"algorithm": 'k-means++', "param": None},
@@ -104,13 +104,10 @@ def compute(n_clusters, n_dims, n_samples, k_means_kwargs, computationidx):
         distance_calculations += n_clusters * data.shape[0] * clf.n_iter_
 
     fit_time = time.time() - st
-    y = clf.predict(data)
-    conf_mat = confusion_matrix(y, labels)
-    acc = np.max(conf_mat, axis=0).sum() / len(labels)
 
     logging.info(f"parameters = [n_clusters: {n_clusters}, n_dims: {n_dims}, n_samples: {n_samples}, kwargs: {k_means_kwargs}]")
-    logging.info(f"distance_calculations={distance_calculations}, accuracy_average={acc}, average_time={fit_time}")
-    return n_clusters, n_dims, n_samples, *k_means_kwargs.values(), acc, distance_calculations, fit_time
+    logging.info(f"distance_calculations={distance_calculations}, average_time={fit_time}")
+    return n_clusters, n_dims, n_samples, *k_means_kwargs.values(), distance_calculations, fit_time
 
 
 if __name__ == '__main__':
@@ -138,9 +135,8 @@ if __name__ == '__main__':
         pb.close()
     results.sort()
 
-    columns = ['n_clusters','n_dims','n_samples'] + list(KWARGS[0].keys()) + ['accuracy_average','distance_calculations_average','fit_time_average']
+    columns = ['n_clusters','n_dims','n_samples'] + list(KWARGS[0].keys()) + ['distance_calculations_average','fit_time_average']
     results = pd.DataFrame(results, columns=columns)
     results = results.fillna('None')
-    results.to_csv(OUT_FOLDER / 'artificial.csv', sep=',', index=False)
     results = results.groupby(columns[:5]).mean().reset_index()
     results.to_csv(OUT_FOLDER / 'artificial_agg.csv', sep=',', index=False)

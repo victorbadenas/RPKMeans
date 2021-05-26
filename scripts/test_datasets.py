@@ -146,6 +146,5 @@ if __name__ == '__main__':
     columns = ['n_clusters','n_dims','n_samples'] + list(KWARGS[0].keys()) + ['distance_calculations_average','fit_time_average']
     results = pd.DataFrame(results, columns=columns)
     results = results.fillna('None')
-    results.to_csv(OUT_FOLDER / f'{parameters.dataset.stem}.csv', sep=',', index=False)
     results = results.groupby(columns[:5]).mean().reset_index()
     results.to_csv(OUT_FOLDER / f'{parameters.dataset.stem}_agg.csv', sep=',', index=False)
