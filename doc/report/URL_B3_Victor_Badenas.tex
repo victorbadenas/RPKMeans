@@ -1,0 +1,107 @@
+\documentclass[oneside,11pt]{book}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage[table,xcdraw]{xcolor}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\usepackage{csquotes}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage{mathtools}
+\usepackage{multirow}
+\usepackage[titles]{tocloft}
+\usepackage[
+    backend=biber,
+    style=numeric,
+    sorting=none
+]{biblatex}
+\usepackage[toc,page]{appendix}
+\addbibresource{ref.bib}
+
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{pmboxdraw}
+\usepackage{csvsimple}
+\usepackage[ruled,vlined]{algorithm2e}
+
+\definecolor{codeorange}{RGB}{204,120,50}
+\definecolor{codegreenjetbrains}{RGB}{106,135,89}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codegrayjetbrains}{RGB}{169,183,198}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+\definecolor{backcolourjetbrains}{RGB}{43,43,43}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{orange},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\scriptsize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2
+}
+\lstset{style=mystyle}
+
+\graphicspath{ {images/} }
+
+\begin{document}
+\titleformat{\chapter}[display]
+{\normalfont\huge\bfseries}{\chaptertitlename\ \thechapter}{20pt}{\Huge}
+\includegraphics[scale=.3]{upc-logo.png}
+\begin{center}
+\vspace*{2in}
+\noindent\hfil\rule{17cm}{0.2mm}\hfil\\
+\begin{Huge}
+    \textbf{B3: An efficient approximation to the K-means clustering for massive data\\}
+\end{Huge}
+\vspace*{0.3in}
+\begin{large}
+    \textbf{Victor Badenas Crespo}
+\end{large}
+\noindent\hfil\rule{17cm}{0.2mm}\hfil\\
+\vspace*{3in}
+\textbf{Unsupervised and Reinforcement Learning\\}
+\textbf{Master in Artificial Intelligence (FIB-MAI)\\}
+\vspace*{0.2in}
+\textbf{June 1st 2021}
+% \maketitle
+
+\end{center}
+\thispagestyle{empty}
+\clearpage
+
+\tableofcontents
+\pagenumbering{roman}
+\clearpage
+\pagenumbering{arabic}
+
+\chapter{Introduction}
+\input{1_Introduction}
+
+\chapter{Implementation}
+\input{2_Implementation}
+
+\chapter{Experiments}
+\input{3_Experiments}
+
+\chapter{Conclusions}
+\input{4_Conclusions}
+
+\chapter{Annex}
+\input{5_Annex}
+
+\printbibliography
+\end{document}
