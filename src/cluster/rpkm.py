@@ -37,10 +37,15 @@ class RPKM(BaseEstimator, ClusterMixin, TransformerMixin):
     def reset(self):
         self.centroids = None
         self.distance_computations_ = 0
+        self.instance_ratio_ = -1
 
     @property
     def distance_computations(self):
         return self.distance_computations_
+
+    @property
+    def instance_ratio(self):
+        return self.instance_ratio_
 
     def _create_partitions(self, X, old_partitions):
         partitions = []
@@ -50,7 +55,7 @@ class RPKM(BaseEstimator, ClusterMixin, TransformerMixin):
 
     def fit(self, X, y=None):
         X = np.array(X)
-        n_dim = X.shape[1]
+        n_samples, n_dim = X.shape[:2]
         self.reset()
 
         partitions = [Partition(np.arange(X.shape[0]), np.full((X.shape[1],), 1), np.full((X.shape[1],), -1), np.full((X.shape[1],), 0))]
@@ -69,10 +74,10 @@ class RPKM(BaseEstimator, ClusterMixin, TransformerMixin):
                 continue
 
             elif self.centroids is None:
-                # initialize the centers
-                centers = np.random.choice(range(len(cardinality)), self.n_clusters, replace=False)
+                # initialize the centers if there are more partitions than centers 
+                # and the centers have not yet been initialized
+                centers = np.random.choice(range(R.shape[0]), self.n_clusters, replace=False)
                 self.centroids = R[centers]
-                continue
 
             elif len(partitions) >= X.shape[0]:
                 # partitions have reached the number of examples, no point in continuing
@@ -82,6 +87,7 @@ class RPKM(BaseEstimator, ClusterMixin, TransformerMixin):
             self._cluster(R, cardinality)
             num_partitions += 1
 
+        self.instance_ratio_ = len(partitions) / n_samples
         return self
 
     def _compute_partitions_meta(self, X, partitions, n_dim):
