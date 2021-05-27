@@ -16,7 +16,7 @@ __author__ = 'victor badenas'
 
 import numpy as np
 from scipy.spatial.distance import cdist
-from sklearn.base import BaseEstimator, ClusterMixin
+from sklearn.base import BaseEstimator, ClusterMixin, ClassifierMixin
 from sklearn.cluster import KMeans
 
 
@@ -67,7 +67,7 @@ class Subset:
         return np.mean(data[self.indexes], axis=0)
 
 
-class RPKM(BaseEstimator, ClusterMixin):
+class RPKM(BaseEstimator, ClusterMixin, ClassifierMixin):
     __doc__ = """Recusive Pertition based K-Means. Finds an approximation of 
     the K-Means cluster centers by partitioning the feature space in 
     d-dimensional quadtrees and creating subsets from this partitions. 
@@ -75,7 +75,7 @@ class RPKM(BaseEstimator, ClusterMixin):
     is fitted and the centers obtained are used as initialization of the 
     next step."""
 
-    def __init__(self, n_clusters=8, max_iter=6, distance_threshold=1e-4, **kwargs):
+    def __init__(self, n_clusters=8, max_iter=6, distance_threshold=1e-4, n_jobs=-1):
         """initializer of the rpkm class.
 
         Parameters
@@ -91,7 +91,7 @@ class RPKM(BaseEstimator, ClusterMixin):
         """
         self.n_clusters = n_clusters
         self.reset()
-        self.wl_kwargs = kwargs
+        self.n_jobs = n_jobs
         self.max_iter = max_iter
         self.distance_threshold = distance_threshold
 
@@ -101,6 +101,7 @@ class RPKM(BaseEstimator, ClusterMixin):
         self.centroids = None
         self.distance_computations_ = 0
         self.instance_ratio_ = -1
+        self.labels_ = None
 
     @property
     def distance_computations(self):
@@ -147,14 +148,14 @@ class RPKM(BaseEstimator, ClusterMixin):
                 fitted object
         """
         # copy dataset into memory and unpack shapes
-        X = np.array(X)
-        n_samples, n_dim = X.shape[:2]\
+        X = self._validate_data(X, y=None, ensure_2d=True)
+        n_samples = X.shape[0]
 
         # reset estimator
         self.reset()
 
         # initialize partitions list as a one partition of the whole dataset.
-        partition = [Subset(np.arange(X.shape[0]), np.full((X.shape[1],), 1), np.full((X.shape[1],), -1), np.full((X.shape[1],), 0))]
+        partition = [Subset(np.arange(n_samples), np.full((X.shape[1],), 1), np.full((X.shape[1],), -1), np.full((X.shape[1],), 0))]
 
         # loop until the max number of iterations are met
         num_partition = 0
@@ -176,7 +177,7 @@ class RPKM(BaseEstimator, ClusterMixin):
                 centers = np.random.choice(range(R.shape[0]), self.n_clusters, replace=False)
                 self.centroids = R[centers]
 
-            elif len(partition) >= X.shape[0]:
+            elif len(partition) >= n_samples:
                 # partitions have reached the number of examples, no point in continuing
                 break
 
@@ -186,6 +187,7 @@ class RPKM(BaseEstimator, ClusterMixin):
 
         # store instance ratio for last partition
         self.instance_ratio_ = len(partition) / n_samples
+        self.labels_ = self.predict(X)
         return self
 
     def _compute_partition_meta(self, X, subsets):
@@ -206,10 +208,8 @@ class RPKM(BaseEstimator, ClusterMixin):
                 cardinalities of shape (L,)
         """
 
-        n_dim = X.shape[1]
-        
         # initialize vectors 
-        R, cardinality = np.empty((len(subsets), n_dim)), np.empty((len(subsets),))
+        R, cardinality = np.empty((len(subsets), self.n_features_in_)), np.empty((len(subsets),))
 
         # extract representative and cardinality arrays for each partition.
         for i, p in enumerate(subsets):
@@ -238,7 +238,7 @@ class RPKM(BaseEstimator, ClusterMixin):
             init=self.centroids,
             n_init=1,
             algorithm='full', # lloyd
-            **self.wl_kwargs
+            n_jobs=self.n_jobs
         ).fit(
             R,
             sample_weight=cardinality
@@ -262,7 +262,6 @@ class RPKM(BaseEstimator, ClusterMixin):
             list:
                 subsets for the partition
         """
-        n_dim = X.shape[1]
         X = X[subset.indexes]
 
         # build binary classification array for subspace
@@ -271,9 +270,9 @@ class RPKM(BaseEstimator, ClusterMixin):
         # convert bits to uint8
         hypercube_idx = np.packbits(comps, axis=1, bitorder='little').flatten()
 
-        return self._create_sub_partitions(hypercube_idx, subset.indexes, max_=subset.max, min_=subset.min, thresholds=subset.thresholds, n_dim=n_dim)
+        return self._create_sub_partitions(hypercube_idx, subset.indexes, max_=subset.max, min_=subset.min, thresholds=subset.thresholds)
 
-    def _create_sub_partitions(self, hypercube_idx, indexes, max_, min_, thresholds, n_dim):
+    def _create_sub_partitions(self, hypercube_idx, indexes, max_, min_, thresholds):
         """given a set of hypercube indexes, create a list of partitions with the indexes of the
         instances assigned to each partition.
 
@@ -289,8 +288,6 @@ class RPKM(BaseEstimator, ClusterMixin):
                 np.array of shape (n_features, ) containing the max for each dimension
             thresholds: np.ndarray
                 np.array of shape (n_features, ) containing the threshold for each dimension
-            n_dim: int
-                number of dimensions
 
         Returns
         ----------
@@ -304,7 +301,7 @@ class RPKM(BaseEstimator, ClusterMixin):
             sub_max = max_.copy()
             sub_min = min_.copy()
             sub_th = thresholds.copy()
-            bin_rep = np.unpackbits(np.array([i], dtype=np.uint8), bitorder='little', count=n_dim)
+            bin_rep = np.unpackbits(np.array([i], dtype=np.uint8), bitorder='little', count=self.n_features_in_)
             sub_min, sub_max = self._modify_ranges(bin_rep, sub_min, sub_max, sub_th)
             sub_th = (sub_max + sub_min)/2
             partition.append(Subset(partition_indexes, sub_max, sub_min, sub_th))
