@@ -151,3 +151,7 @@ Finally, the last figure \ref{fig:summary_iteration} represent the evolution of 
     \caption{Center evolution}
     \label{fig:summary_iteration}
 \end{figure}
+
+\section{Artificial Dataset Generator}
+
+Additionally to the algorithm classes, a helper class able to generate datasets as specified in the paper was required to do the experiments with the artificial datasets. In the paper they specify that they create gaussian mixture datasets ensuring an overlap of less than 5\%. A class was defined as the \textit{Artificial Dataset Generator}. The class is defined in \textit{./src/artificial\_dataset\_generator.py} and each time a new dataset is requested, a random set of centers in the feature space is created. Then the closest centers are detected and the overlap between gaussians is computed. Starting from an std value of 0.1, the value is modified until the maximum overlap between any two gaussians in the dataset is 0.05 and then the dataset is created with sklearn's \textit{datasets.make\_blobs}.
