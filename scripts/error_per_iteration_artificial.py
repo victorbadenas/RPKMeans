@@ -30,7 +30,7 @@ np.random.seed(SEED)
 pb = None
 
 OUT_FOLDER = Path('results/')
-N_REPLICAS = 5
+N_REPLICAS = 10
 N_CLUSTERS = [3, 9]
 N_DIMS = [2, 4, 6, 8]
 N_SAMPLES = [1e2, 1e3, 1e4, 1e5, 1e6]
