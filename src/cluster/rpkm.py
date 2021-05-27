@@ -16,7 +16,7 @@ __author__ = 'victor badenas'
 
 import numpy as np
 from scipy.spatial.distance import cdist
-from sklearn.base import BaseEstimator, ClusterMixin, TransformerMixin
+from sklearn.base import BaseEstimator, ClusterMixin
 from sklearn.cluster import KMeans
 
 
@@ -67,7 +67,7 @@ class Subset:
         return np.mean(data[self.indexes], axis=0)
 
 
-class RPKM(BaseEstimator, ClusterMixin, TransformerMixin):
+class RPKM(BaseEstimator, ClusterMixin):
     __doc__ = """Recusive Pertition based K-Means. Finds an approximation of 
     the K-Means cluster centers by partitioning the feature space in 
     d-dimensional quadtrees and creating subsets from this partitions. 
@@ -93,7 +93,6 @@ class RPKM(BaseEstimator, ClusterMixin, TransformerMixin):
         self.reset()
         self.wl_kwargs = kwargs
         self.max_iter = max_iter
-        self.n_clusters = n_clusters
         self.distance_threshold = distance_threshold
 
     def reset(self):
