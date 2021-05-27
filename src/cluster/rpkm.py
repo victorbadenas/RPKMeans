@@ -68,6 +68,7 @@ class Subset:
 
 
 class RPKM(BaseEstimator, ClusterMixin, ClassifierMixin):
+    __version__ = '0.1.0'
     __doc__ = """Recusive Pertition based K-Means. Finds an approximation of 
     the K-Means cluster centers by partitioning the feature space in 
     d-dimensional quadtrees and creating subsets from this partitions. 
