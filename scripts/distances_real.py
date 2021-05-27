@@ -86,7 +86,7 @@ def compute(dataset, n_clusters, n_dims, n_samples, k_means_kwargs, computationi
         distance_calculations = clf.distance_computations
 
     elif k_means_kwargs["algorithm"] == 'mb-kmeans':
-        distance_calculations = n_clusters * n_clusters * data.shape[0]
+        distance_calculations = 0.5 * n_clusters * (n_clusters + 1) * data.shape[0]
         clf = MiniBatchKMeans(
             n_clusters=n_clusters,
             init='k-means++',
@@ -96,7 +96,7 @@ def compute(dataset, n_clusters, n_dims, n_samples, k_means_kwargs, computationi
         distance_calculations += n_clusters * k_means_kwargs['param'] * clf.n_iter_
 
     else:
-        distance_calculations = n_clusters * n_clusters * data.shape[0]
+        distance_calculations = 0.5 * n_clusters * (n_clusters + 1) * data.shape[0]
         clf = KMeans(
             n_clusters=n_clusters,
             init=k_means_kwargs["algorithm"],
@@ -147,4 +147,4 @@ if __name__ == '__main__':
     results = pd.DataFrame(results, columns=columns)
     results = results.fillna('None')
     results = results.groupby(columns[:5]).mean().reset_index()
-    results.to_csv(OUT_FOLDER / f'{parameters.dataset.stem}_agg.csv', sep=',', index=False)
+    results.to_csv(OUT_FOLDER / f'distances_{parameters.dataset.stem}_agg.csv', sep=',', index=False)
