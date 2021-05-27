@@ -1,6 +1,6 @@
 In this section we will reason and explain the experiments done with the algorithm to demonstrate the good performance and efficiency of the algorithm. The experiments were replicated from the paper. Six main experiments were performed, 3 with artificial datasets and 3 with real datasets.
 
-% TODO explain datasets 
+The artificial datasets will be created using the Artificial Dataset Generator class mentioned in the previous section. The number of gausssians will be set to the same number of clusters to be detected in the clustering algorithms and the standard deviation will be set to ensure an overlap of around 5\%. For the real dataset, we will use the gas-sensor dataset from the UCI repository, particularly the ethylene\_methane dataset which contains 4178504 instances and 16 features. In order to construct the dataset of the wanted size, a random number of instances will be selected and a random number of features will be selected as well acording to the parameters $K$ and $D$ that will be set in each of the experiments.
 
 Three main experiments were performed with each dataset: The computation of distances comparison experiment, the standard error experiment and finally the instance ratio experiment.
 
@@ -37,6 +37,8 @@ Using this computation schemes, we perform a sweep for $K \in \{3, 9\}$, $D \in 
     \caption{Distance computation results in real datasets}
     \label{fig:distance_real}
 \end{figure}
+
+The figures show promising results where the number of distance computations is usually smaller than the number of computations for k-means++. In the artificial dataset's results we can see a little bit of overlap, especially in the case of D=8 and K=9, where all but the RPKM with $m \in \{1,2,3\}$ seem to have very similar performance. On the other hand, the real dataset's results show very promising results where none of the distance computations for any of the K, D combinations use more than the distances computed by MiniBatchKMeans and KMeans.
 
 \section{Instance Ratio}
 
