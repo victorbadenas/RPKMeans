@@ -30,9 +30,9 @@ pb = None
 
 OUT_FOLDER = Path('results/')
 N_REPLICAS = 10
-N_CLUSTERS = [9, 3] #[3, 9]
-N_DIMS = [8, 4, 2] #[2, 4, 8]
-N_SAMPLES = [1e5, 1e4, 1e3, 1e2] # [1e2, 1e3, 1e4, 1e5, 1e6]
+N_CLUSTERS = [3, 9]
+N_DIMS = [2, 4, 8]
+N_SAMPLES = [1e2, 1e3, 1e4, 1e5, 1e6]
 N_THREADS = 1 # int or None to use all of them
 
 KWARGS = [
