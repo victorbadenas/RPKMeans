@@ -52,6 +52,7 @@ class PandasDataset:
         self.labelEncoders = {}
         self.data_ = pd.read_csv(csvPath)
         self.formatDataFrame()
+        self.targetLabel = self.data_.columns.to_list()[-1]
 
     def assertInitParameters(self, stringConversion, floatNormalization, missingDataImputation):
         assert self.path.suffix == '.csv', f'dataset must be a csv file, not {self.path.suffix}'
@@ -155,6 +156,18 @@ class PandasDataset:
     @property
     def data(self):
         return self.data_
+
+    @property
+    def x(self):
+        return self.data_.drop(self.targetLabel, axis=1).to_numpy()
+
+    @property
+    def y(self):
+        return self.data_[self.targetLabel].to_numpy()
+
+    @property
+    def name(self):
+        return self.path.stem
 
     def getStringMapData(self):
         return self.labelEncoders
