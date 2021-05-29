@@ -1,0 +1,59 @@
+In this chapter we will conduct additional experiments of the ones presented on the paper. All experiments in this chapter have been performed with the artificial dataset generator. The authors claimed two achievements in the paper, the reduction of distance computations for large datasets, which has been thorughly validated in the paper and in the previous secion of the report and that the RPKM algorithm was able to approximate the performance of a regular KMeans. The goal of the experiments in this chapter is to corroborate the claim of the authors that the clustering method approximates scikit-learn's kmeans. 
+
+The rest of the chapter will be divided into two sections. The first section will contain an analysis of some internal criteria between scikit-learn's KMeans and the RPKM algorithm will be compared. The second section will contain the evaluation and discussion of external criteria.
+
+\section{Internal Criteria}
+
+In this section we will compute and discuss three internal criteria for the clustering results obtained with PRKM and how they compare to the same criteria obtained for scikit-learn's KMeans. The three criteria selected were silhouette, calinski\_harabasz, and davies\_bouldin. 
+
+The silhouette metric will provide a measure of quality of the separation between the clusters created by both algorithms. The silhouette metric ranges from -1 to 1, where a high value will indicate that the each object is well matched to its own cluster and poorly matched to neighboring clusters.
+
+The calinski metric will provide a measure of the interclass to intraclass distance ratio, determining if the clusters are compact in the center of the clusters and disperse as the instance are further away of the centers. The calinski metric does not have a suitable range to be compared, but the higher the value the better. This particular metric is very suitable for spherical clusters with very compact centers such as normal point distributions. Because of that it was chosen to use it, as the artificial dataset that we will be using is formed by a gaussian mixture of data points.
+
+The davies\_bouldin metric will provide a measure of the average similarity measure of each cluster with its most similar cluster. The lower the score, the more separated the clusters are. The range of the metric's values is from 0 to infinite, where the lower the value, the better is the approximation.
+
+We extracted the metrics for the number of instances $N \in \{100, 1000, 10000\}$, the number of elements in the high end of the spectrum was ommited due to computation time. The algorithms were also evaluated for the number of clusters $K \in \{3, 9\}$, for the number of dimensions $D \in \{2, 4, 8\}$. $N_{replicas}=10$ were used to average the results and obtain a more realistic measure of the metrics.
+
+The raw results for all the algorithms and the metrics obtained will be shown in the appendixes' figures \ref{fig:silhouette}, \ref{fig:calinski_harabasz_score} and \ref{fig:davies_bouldin_score} containing the raw results for each rpkm configuration and every $(K, D)$ configuration of the silhouette, calinski and davies metrics respectively.
+
+% comment on the raw data
+
+The results from the data shown in the previous figures was then aggregated to perform a simplified analysis of the metrics. We compared the metrics of each of the $m$ configurations o the RPKM algorithm to the metrics obtained with the clusters obtained from \textit{scikit-learn's KMeans++}. As the range of the values was very disperse, a simple similarity measure is performed similarly to the std.error presented in section \ref{section:qualitiy of the approximation} but as the error is not negative by definition in this case, the absolute value of the difference was taken in order to evaluate the absolute value of the error between the metrics. We define the value as the absolute standard error.
+
+$$\rho' = |\rho| = \frac{|m_{km++} - m_{RPKM}|}{m_{km++} + m_{RPKM}}$$
+
+The $\rho'$ function is scale invariant and its values are [0, 1] for all the positive values of the metrics. The only metric that can be negative is the silhouette score. In order to avoid any issue, the silouette score will be scaled from the [-1, 1] range to the [0, 1] range linearly for the sake of this operation. Additionally, if both metrics are 0, $\rho'$ is undefined, but the limit tends to 1, so this case will be controlled. Once they are solved, the $\rho'$ value will give a similarity value where 0 means that the metrics were identical and 1 means that the metrics were completely different.
+
+The metrics obtained were averaged through the different $(K, D)$ combinations shown in the previous tables. So each value of the table comes from the comparison of every $(K, D)$ combination compared to the KMeans++ algorithm and then averaged.
+
+$$\bar\rho\ '(m) = \frac{1}{|K| \cdot |D|}\sum_{k \in K}\sum_{d \in D} \rho'(k,d,m)$$
+
+\begin{table}[ht!]
+    \centering
+    \begin{tabular}{l|cccccc|}
+    \cline{2-7}
+                                             & \multicolumn{6}{c|}{\textbf{max iterations}}  \\ \cline{1-1}
+    \multicolumn{1}{|l|}{\textbf{metric}}    & 1.0   & 2.0   & 3.0   & 4.0   & 5.0   & 6.0   \\ \hline
+    \multicolumn{1}{|l|}{silhouette}         & 0.025 & 0.017 & 0.010 & 0.009 & 0.008 & 0.008 \\
+    \multicolumn{1}{|l|}{calinski\_harabasz} & 0.196 & 0.162 & 0.140 & 0.132 & 0.130 & 0.126 \\
+    \multicolumn{1}{|l|}{davies\_bouldin}    & 0.113 & 0.094 & 0.073 & 0.070 & 0.070 & 0.069 \\ \hline
+    \end{tabular}
+    \caption{absolute standard error of internal criteria metrics}
+    \label{table:metrics_std_error}
+\end{table}
+
+The results obtained with this metric are shown in \ref{table:metrics_std_error}. The closer the $\rho'$ value is to 0, the better the approximation is for that algorithm. In the table we show the results for the different configurations of $m$ as columns and the three metrics as rows. From the table we can see that the error values for the algorithm decreases as the number of RPKM iterations $m$ increases. This represents a higher cluster similarity as the number of representatives increases, as the authors also stated. Additionally we can see that the similarity values for the silhouette score are better than the other two metrics, that could mean that the clusters are well defined but there is not much separation between them, as it's expected from a dataset with clusters with some overlap between clusters.
+
+\section{External Criteria}
+
+In this section we will perform some comparisons using the following external criteria: normalized mutual info, adjusted mutual info and adjusted random score. These metrics compare two sets of labels of the data to find relations between them. Usually, the labels of the clustering algorithm would be compared to a set of ground truth labels to compute the quality of the clustering algorithm, however, this is not the goal of the experiments. The goal of this section is to compare the KMeans++ algorithm to the RPKM and evaluate the approximation of the later one of the KMeans++ algorithm. In order to perform this comparison, we will use the clustering labels extracted from a KMeans++ run as the ground truth and we will measure the extracted RPKM labels to them.
+
+The Normalized Mutual Information (NMI) is a normalization of the Mutual Information (MI) score to scale the results between 0 and 1. A value of 0 corresponds to no correlation between the two sets of labels while a value of 1 corresponds to a perfect correlation between the two sets of labels. This metric does not take the probability into account. The NMI metric is independent of the values of the labels, a permutation of the class labels will not alter the result of the metric in any way.
+
+The Adjusted Mutual Information (AMI) is another adjustment of the MI metric to account for chance. It accounts for the fact that when the number of clusters is large for two clustering schemes, the MI is higher even though there might not be more information shared. As the NMI metric, AMI is independent on the values of the labels. The metric ranges from 0 for random asignations to 1 for perfectly matched partitions.
+
+The Adjusted Rand Score (ARS) computes a similarity measure between two clustering s by considering all pairs of samples and couynting pairs that are assigned in the same or different clusters in the predicted and true label sets. The value of the metric ranges from 0 for completely random label sets to 1 for identical label sets up to a permutation.
+
+We extracted the metrics for the number of instances $N \in \{100, 1000, 10000, 100000, 1000000\}$, number of clusters $K \in \{3, 9\}$, for the number of dimensions $D \in \{2, 4, 6, 8\}$. $N_{replicas}=10$ were used to average the results and obtain a more realistic measure of the metrics. The results of the experiments can be found in \ref{fig:normalized_mutual_info}, \ref{fig:adjusted_mutual_info}, and \ref{fig:adjusted_rand} showing the NMI, AMI, and ARS metrics respectively.
+
+The first appreciation in the plots is that the NMI and AMI scores are almost identical due to the fact that the clustering is not random but it follows a heuristic. From now on the appreciations done for AMI and NMI are equivalent. The NMI metric demonstates the same conclusion that has been recurrent in the report which is that the results support the claims by the authors that the algorithm is a good aproximation of the KMeans++ algorithm and the bigger the number of iterations $m$ the better the approximation. Also, the AMI and NMI metrics are very similar due that the number of clusters used in the experiments are quite modest. Finally the ARS is quite similar as well as all of them are quite similar in concept, but from here we can see that the clustering is very similar to the reference and it's a good approximation of it.

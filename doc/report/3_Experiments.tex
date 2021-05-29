@@ -26,18 +26,6 @@ Where the only notable difference is that the distances computed in each iterati
 
 Using this computation schemes, we perform a sweep for $K \in \{3, 9\}$, $D \in \{2, 4, 8\}$. For the artificial datasets, $N \in \{1e2, 1e3, 1e4, 1e5, 1e6\}$ while for the real dataset the values of N were chosen to be $N \in \{4000, 12000, 40000, 120000, 400000, 1200000, 4000000\}$ as in the paper. The results obtained with this experiment are shown in \ref{fig:distance_art} and \ref{fig:distance_real} containing the results for the artificial and real dataset respectively.
 
-\begin{figure}[!ht]
-    \includegraphics[width=\linewidth]{images/experiments/distances_artificial.png}
-    \caption{Distance computation results in artificial datasets}
-    \label{fig:distance_art}
-\end{figure}
-'
-\begin{figure}[!ht]
-    \includegraphics[width=\linewidth]{images/experiments/distances_real.png}
-    \caption{Distance computation results in real datasets}
-    \label{fig:distance_real}
-\end{figure}
-
 The figures show promising results where the number of distance computations is usually smaller than the number of computations for k-means++. In the artificial dataset's results we can see a little bit of overlap, especially in the case of D=8 and K=9, where all but the RPKM with $m \in \{1,2,3\}$ seem to have very similar performance. On the other hand, the real dataset's results show very promising results where none of the distance computations for any of the K, D combinations use more than the distances computed by MiniBatchKMeans and KMeans.
 
 \section{Instance Ratio}
@@ -46,22 +34,12 @@ We define the instance ratio as the size of the partition divided by the number 
 
 The instance ratio was computed for each max\_iter ($m$) value for the RPKM and extracted at the end of the fit stage as the number of subsets in the $m^{th}$ partition divided by the number of instances of the dataset. The results for the experiments can be seen in \ref{fig:instance_art} and \ref{fig:instance_real} containing the results for the artificial and real dataset respectively.
 
-\begin{figure}[!ht]
-    \includegraphics[width=\linewidth]{images/experiments/instance_ratio_artificial.png}
-    \caption{Instance ratio computation results in artificial datasets}
-    \label{fig:instance_art}
-\end{figure}
 
-\begin{figure}[!ht]
-    \includegraphics[width=\linewidth]{images/experiments/instance_ratio_real.png}
-    \caption{Instance ratio computation results in real datasets}
-    \label{fig:instance_real}
-\end{figure}
 
 In the figures we can appreciate that on the first iterations of the RPKM algorithm, the number of representatives (or subsets) is very small wrt. the number of samples in the dataset as is expected. The exponential growth of the number of subsets is very apparent in the real dataset's results but in the artificial dataset's results, it is less apreciable as it reaches a ratio closer to 1 very quickly compared to the real dataset. For smaller number of samples in the dataset it's quite more apparent that the ratio grows a lot quicker than in the datasets that have a considerable ammount of instances. The results are promising as the algorithm is ment to be used with large datasets, and it seems to use a very small number of instances. We can note as well that the ratio increases very quickly wrt to the number of dimensions, as the number of hypercubes is exponential wrt the number of dimensions and the number of partitions will be bigger.
 
 \section{Quality of the approximation}
-
+\label{section:qualitiy of the approximation}
 In this section we will discuss the standard error (std.error) metric proposed in the paper and the experiment realized to quantitatively analyze the difference between the clustering centers extracted with RPKM and the clusters extracted with a k-means++ algorithm. In the paper, they define the clustering error as:
 
 $$E(C) = \sum_{x \in D} \min_{k=1,\dots,K}||x-c_k||^2$$
@@ -71,17 +49,5 @@ This expression will be used to compute the clustering error of the RPKM algorit
 $$\rho = \frac{E_{km++} - E_{RPKM}}{E_{km++}}$$
 
 This will always yield $\rho < 0$ and the more negative the value of $\rho$ the worse is the approximation of the RPKM centers. The results for this experiment can be seen in \ref{fig:error_art} and \ref{fig:error_real} containing the results for the artificial and real datasets respectively.
-
-\begin{figure}[!ht]
-    \includegraphics[width=\linewidth]{images/experiments/std_error_artificial.png}
-    \caption{Standard error computation results in artificial datasets}
-    \label{fig:error_art}
-\end{figure}
-
-\begin{figure}[!ht]
-    \includegraphics[width=\linewidth]{images/experiments/std_error_real.png}
-    \caption{Standard error computation results in real datasets}
-    \label{fig:error_real}
-\end{figure}
 
 From both figures we can extract the conclusion that the error decreases as $m$ increases and the number of representatives with it. The more clusters the error becomes more apparent wrt the k-means++ algorithm. Also as the number of dimensions increase, as the number of partitions increases the ratio approaches 1 and then the algorithm approximates very well the k-means++ error but by means of brute force.
