@@ -103,6 +103,7 @@ class RPKM(BaseEstimator, ClusterMixin, ClassifierMixin):
         self.distance_computations_ = 0
         self.instance_ratio_ = -1
         self.labels_ = None
+        self.n_iter_ = 0
 
     @property
     def distance_computations(self):
@@ -189,6 +190,7 @@ class RPKM(BaseEstimator, ClusterMixin, ClassifierMixin):
         # store instance ratio for last partition
         self.instance_ratio_ = len(partition) / n_samples
         self.labels_ = self.predict(X)
+        self.n_iter_ = num_partition
         return self
 
     def _compute_partition_meta(self, X, subsets):
@@ -268,8 +270,8 @@ class RPKM(BaseEstimator, ClusterMixin, ClassifierMixin):
         # build binary classification array for subspace
         comps = X > subset.thresholds[None, :]
 
-        # convert bits to uint8
-        hypercube_idx = np.packbits(comps, axis=1, bitorder='little').flatten()
+        # convert bits to int
+        hypercube_idx = bintoint(comps, comps.shape[-1])
 
         return self._create_sub_partitions(hypercube_idx, subset.indexes, max_=subset.max, min_=subset.min, thresholds=subset.thresholds)
 
@@ -302,7 +304,7 @@ class RPKM(BaseEstimator, ClusterMixin, ClassifierMixin):
             sub_max = max_.copy()
             sub_min = min_.copy()
             sub_th = thresholds.copy()
-            bin_rep = np.unpackbits(np.array([i], dtype=np.uint8), bitorder='little', count=self.n_features_in_)
+            bin_rep = inttobin(i, self.n_features_in_).flatten()
             sub_min, sub_max = self._modify_ranges(bin_rep, sub_min, sub_max, sub_th)
             sub_th = (sub_max + sub_min)/2
             partition.append(Subset(partition_indexes, sub_max, sub_min, sub_th))
@@ -331,12 +333,9 @@ class RPKM(BaseEstimator, ClusterMixin, ClassifierMixin):
                 modified min array
             np.array:
                 modified max array
-        """        
-        for j, b in enumerate(bin_rep):
-            if b == 1:
-                sub_min[j] = sub_th[j]
-            else:
-                sub_max[j] = sub_th[j]
+        """
+        sub_min[bin_rep] = sub_th[bin_rep]
+        sub_max[~bin_rep] = sub_th[~bin_rep]
         return sub_min, sub_max
 
     def predict(self, X):
@@ -391,3 +390,9 @@ class RPKM(BaseEstimator, ClusterMixin, ClassifierMixin):
 
         l2distances = cdist(X, self.centroids)
         return np.argmin(l2distances, axis=1)
+
+def inttobin(value, n_dim):
+    return (((value & (1 << np.arange(n_dim)))) > 0)
+
+def bintoint(value, n_dim):
+    return (value*2**np.arange(n_dim)).sum(axis=1)
