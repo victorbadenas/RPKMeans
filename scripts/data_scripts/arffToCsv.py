@@ -10,6 +10,8 @@ def toCsv(text):
     header = ""
     new_content = []
     for line in text:
+        if line.startswith('%'):
+            continue
         if not data:
             if "@ATTRIBUTE" in line or "@attribute" in line:
                 attributes = line.split()

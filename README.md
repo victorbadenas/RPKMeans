@@ -21,7 +21,7 @@
 
 ## datasets
 
-Dataset retrieved from https://archive.ics.uci.edu/ml/machine-learning-databases/00322/data.zip :
+Dataset retrieved from https://archive.ics.uci.edu/ml/machine-learning-databases/00322/data.zip:
 
 ```bash
 # download and extract
@@ -30,3 +30,10 @@ python scripts/download_data.py -d https://archive.ics.uci.edu/ml/machine-learni
 # normalize format to csv
 python scripts/format_gas_sensor_data.py
 ```
+
+The additional real world datasets were retrieved from https://github.com/deric/clustering-benchmark/tree/master/src/main/resources/datasets/real-world and then converted with the `scripts/data/arffToCsv.py` script
+
+- The `yeast` dataset was removed due to complications with using spaces instead of commas as separators
+- The `wine` dataset was removed due to having the class as the first instead of last column
+- The `water-treatment` was removed due to the same reason.
+- The `wdbc` was removed due to the same reason.

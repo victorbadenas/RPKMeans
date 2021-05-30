@@ -76,7 +76,7 @@ class RPKM(BaseEstimator, ClusterMixin, ClassifierMixin):
     is fitted and the centers obtained are used as initialization of the 
     next step."""
 
-    def __init__(self, n_clusters=8, max_iter=6, distance_threshold=1e-4, n_jobs=-1):
+    def __init__(self, n_clusters=8, max_iter=6, distance_threshold=0, n_jobs=-1):
         """initializer of the rpkm class.
 
         Parameters
@@ -94,7 +94,7 @@ class RPKM(BaseEstimator, ClusterMixin, ClassifierMixin):
         self.reset()
         self.n_jobs = n_jobs
         self.max_iter = max_iter
-        self.distance_threshold = distance_threshold
+        self.tol_ = distance_threshold
 
     def reset(self):
         """reset the estimator. Sets the centroids to None and resets some internal metrics.
@@ -183,9 +183,14 @@ class RPKM(BaseEstimator, ClusterMixin, ClassifierMixin):
                 # partitions have reached the number of examples, no point in continuing
                 break
 
+            old_centers = self.centroids.copy()
             # if we reach here, it means we have initialized the centers and will fit a wl.
             self._cluster(R, cardinality)
             num_partition += 1
+            
+            if self.tol_ > 0:
+                if cdist(self.centroids, old_centers).diagonal().max() < self.tol_:
+                    break
 
         # store instance ratio for last partition
         self.instance_ratio_ = len(partition) / n_samples
@@ -392,7 +397,7 @@ class RPKM(BaseEstimator, ClusterMixin, ClassifierMixin):
         return np.argmin(l2distances, axis=1)
 
 def inttobin(value, n_dim):
-    return (((value & (1 << np.arange(n_dim)))) > 0)
+    return (value & (2**np.arange(n_dim))) > 0
 
 def bintoint(value, n_dim):
     return (value*2**np.arange(n_dim)).sum(axis=1)

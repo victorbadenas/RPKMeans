@@ -53,7 +53,8 @@ def compute(X, y, n_clusters, computationIdx):
     clf = RPKM(
         n_clusters=n_clusters,
         max_iter=6,
-        n_jobs=-1
+        n_jobs=-1,
+        distance_threshold=1e-4
     )
 
     ref_clf = KMeans(
@@ -110,4 +111,4 @@ if __name__ == '__main__':
     results = pd.DataFrame(results, columns=['dataset', 'instances', 'dimensions', 'iterations', 'RPKM_distances', 'k-means++_distances', 'instance_ratio', 'stderror', 'ami', 'sil_error', 'chs_error', 'dbs_error'])
     results = results.fillna('None')
     results = results.groupby(['dataset','instances','dimensions']).mean().reset_index()
-    results.to_csv(OUT_FOLDER / 'real_datasets.csv', sep=',', index=False)
+    results.to_csv(OUT_FOLDER / 'test.csv', sep=',', index=False)
