@@ -111,7 +111,17 @@ The binary partition method segments the data given as an input that constutes a
 comps = X > subset.thresholds[None, :]
 \end{lstlisting}
 
-This operation will generate a numpy matrix with boolean values with shape $(n_{subset}, n_{dim})$ where each row will contain the binary representation of a numerical index assigned to each hypercube. This matrix will be converted to an array of integer indexes containing the assignation of each of the elements to a subset. The conversion from binary to int is performed by the \textit{np.packbits} method.
+This operation will generate a numpy matrix with boolean values with shape $(n_{subset}, n_{dim})$ where each row will contain the binary representation of a numerical index assigned to each hypercube. This matrix will be converted to an array of integer indexes containing the assignation of each of the elements to a subset. The conversion from binary to int is performed by a custom function coded with numpy. The conversion functions from int to binary and binary to int are shown: 
+
+\begin{lstlisting}[language=python]
+def inttobin(value, n_dim):
+    return ((value & (2**np.arange(n_dim)))) > 0
+
+def bintoint(value, n_dim):
+    return (value*2**np.arange(n_dim)).sum(axis=1)
+\end{lstlisting}
+
+The binary to int funcion is quite self explainatory, generate a vector of powers of 2 and multiply by the binary vector $value$, then sum for all the indexes of the second dimension to obtain the integer representation. The integer to bin funcion is a little bit more complex. First a vector of powers of two is constructed, then a logical and operation with the integer value is performed and the positions that are not $> 0$ are set to 0 to construct the binary representation.
 
 After the indexes are computed, the subsets initialized using the Subset struct described above, where the min, max and threshold arrays are modified to suit the new subset's instances. The range is modified in the following way:
 
