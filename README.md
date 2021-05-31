@@ -19,21 +19,58 @@
 }
 ```
 
+## Report
+
+The pdf file with the full report can be fount in the root directory as a symlink to the original rendered latex file in `doc/report/URL_B3_VictorBadenas.pdf`
+
+## Run instructions
+
+create the environment with `requirements.txt` file:
+
+```bash
+conda create --name url3.9 python=3.9
+pip install -r requirements.txt
+```
+
+All files must be run from the root folder.
+
 ## datasets
 
 Dataset retrieved from https://archive.ics.uci.edu/ml/machine-learning-databases/00322/data.zip:
 
 ```bash
 # download and extract
-python scripts/download_data.py -d https://archive.ics.uci.edu/ml/machine-learning-databases/00322/data.zip -n gas_sensor
+python scripts/data_scripts/download_data.py -d https://archive.ics.uci.edu/ml/machine-learning-databases/00322/data.zip -n gas_sensor
 
 # normalize format to csv
-python scripts/format_gas_sensor_data.py
+python scripts/data_scripts/format_gas_sensor_data.py
 ```
 
-The additional real world datasets were retrieved from https://github.com/deric/clustering-benchmark/tree/master/src/main/resources/datasets/real-world and then converted with the `scripts/data/arffToCsv.py` script
+The additional real world datasets were retrieved from https://github.com/deric/clustering-benchmark/tree/master/src/main/resources/datasets/real-world and copied to `./data/real-world/`. They were then converted with the following command:
+
+```bash
+python scripts/data_scripts/arffToCsv.py data/real-world/
+```
 
 - The `yeast` dataset was removed due to complications with using spaces instead of commas as separators
 - The `wine` dataset was removed due to having the class as the first instead of last column
 - The `water-treatment` was removed due to the same reason.
 - The `wdbc` was removed due to the same reason.
+
+All dataset files must be in the `./data/` directory.
+
+## RPKM
+
+The RPKM implementation is located in `./src/cluster/rpkm.py` analogously to the distribution of the `kemlglearn` repository for easy integration of the algorithm into the package.
+
+## Datasets loaders
+
+Two helper classes in the `./src/` folder have been created to load and create the datasets used in the experiments. The classes were wrote in the `dataset.py` and `artificial_dataset_generator.py` files respectively.
+
+## Experiment scripts
+
+All experiment scripts are located in the `./scripts/` folder. The scripts generate csv result files that are stored in the `./results/` folder by default. Also, the logs of the experiments are in the `./logs/` folder. The scripts to generate the plot images from the csv for the report are included in the `./scripts/plots/` folder.
+
+## Report
+
+The latex code for the report and the figures included in it are located in the `./doc/folder`.
