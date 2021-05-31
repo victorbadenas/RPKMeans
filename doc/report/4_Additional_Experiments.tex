@@ -59,7 +59,7 @@ The first appreciation in the plots is that the NMI and AMI scores are almost id
 
 \section{Real World Datasets}
 
-In this section we will examine the performance of the algorithm on datasets from the UCI repoository. The following datasets were used in the experiment: balance-scale, cpu, dermatology, ecoli, glass, haberman, heart-statlog, iono, iris, segment, tae, thy, vehicle, vowel and zoo. All of them were used to fit a RPKM with $m=6$. The results can be seen in \ref{table:real}. Also, as we are working with datasets of different characteristics, the stopping condition will be used to limit the number of iterations of the RPKM algorithm.
+In this section we will examine the performance of the algorithm on datasets from the UCI repoository. The following datasets were used in the experiment: arrhythmia, balance, cpu, dermatology, ecoli, german, glass, haberman, heart, iono, iris, letter, segment, sonar, tae, thy, vehicle, vowel, wisc, and zoo. All of them were used to fit a RPKM with $m=6$. The results can be seen in \ref{table:real}. Also, as we are working with datasets of different characteristics, the stopping condition will be used to limit the number of iterations of the RPKM algorithm.
 
 \begin{table}[ht!]
     \centering
@@ -92,6 +92,6 @@ In this section we will examine the performance of the algorithm on datasets fro
     \label{table:real}
 \end{table}
 
-In the table, the RPKM fitted with each dataset was compared to sklean's kmeans++. First we mention the number of instances and number of dimensions as they are relevant to the results obtained from the experiment. The number of distance computations in kmeans and RPKM, the instance ration at the n\_iter iteration is also shown for comparison. Finally we expose the metrics of AMI and the three internal criteria metrics used in \ref{section:internal}. 
+In the table, the RPKM fitted with each dataset was compared to sklearn's kmeans++. First we mention the number of instances and number of dimensions as they are relevant to the results obtained from the experiment. The number of distance computations in kmeans and RPKM, the instance ration at the n\_iter iteration is also shown for comparison. Finally we expose the metrics of AMI and the three internal criteria metrics used in \ref{section:internal}. 
 
 Even though the number of distances was reduced for the balance, cpu, glass, haberman, iris, segment, tar, thy and zoo datasets, the number of computations for the other tested datasets was not reduced significantly, probably due to the elevated number of features in most of the datasets and the reduced number of instances. However, the metrics of the real world dataset verify the findings that have been done in the previous two sections, the clusters are a good aproximation.
