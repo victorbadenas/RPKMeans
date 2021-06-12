@@ -1,4 +1,4 @@
-# MAI-URL
+# RPKMeans
 
 [An efficient approximation to the K-means clustering for Massive Data](https://doi.org/10.1016/j.knosys.2016.06.031)  implementation for Unsupervised and Reinforcement Learning class in Master of Artificial Intelligence (MAI-UPC) at FIB
 
